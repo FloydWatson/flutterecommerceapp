@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import './product.dart';
 
 class Products with ChangeNotifier {
-   // underscore = private property
+  // underscore = private property
   List<Product> _items = [
     Product(
       id: 'p1',
@@ -39,18 +39,15 @@ class Products with ChangeNotifier {
     ),
   ];
 
-
   // if just list is returned then you get a pointer to that list, a Reference of it
-  List<Product> get items{
-
+  List<Product> get items {
     // Spread operator
     return [..._items];
   }
 
-  List<Product> get favouriteItems{
+  List<Product> get favouriteItems {
     // return only favourites
     return _items.where((prodItem) => prodItem.favourite).toList();
-
   }
 
   Product findById(String id) {
@@ -58,8 +55,15 @@ class Products with ChangeNotifier {
   }
 
 // widgets listening can see list has been edited. then call for new list at rebuild trigger
-  void addProduct() {
-    //_items.add(value);
+  void addProduct(Product product) {
+    final newProduct = Product(
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      id: DateTime.now().toString(),
+    );
+    _items.add(newProduct);
     notifyListeners();
   }
 }
