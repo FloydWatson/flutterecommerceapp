@@ -7,7 +7,7 @@ class Product with ChangeNotifier{
   final double price;
   final String
       imageUrl; // dont add asset as you will have to ship new app version for every product added
-  bool favourite;
+  bool isFavorite;
 
   Product(
       {
@@ -16,11 +16,11 @@ class Product with ChangeNotifier{
       @required this.description,
       @required this.price,
       @required this.imageUrl,
-      this.favourite = false,
+      this.isFavorite = false,
       });
 
   void toggleFavouriteStatus(){
-    this.favourite = !this.favourite;
+    this.isFavorite = !this.isFavorite;
     // telling listeners somethig has changed
     notifyListeners();
   }

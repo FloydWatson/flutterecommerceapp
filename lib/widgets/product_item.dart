@@ -47,7 +47,7 @@ class ProductItem extends StatelessWidget {
             builder: (ctx, product, child) => IconButton(
               // set icon to favourite true / false
               icon: Icon(
-                product.favourite ? Icons.favorite : Icons.favorite_border,
+                product.isFavorite ? Icons.favorite : Icons.favorite_border,
                 color: Theme.of(context).accentColor,
               ),
               onPressed: () {
