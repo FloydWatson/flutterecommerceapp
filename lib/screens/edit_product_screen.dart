@@ -23,13 +23,43 @@ class _EditProductScreenState extends State<EditProductScreen> {
     price: 0,
     description: '',
     imageUrl: '',
+    favourite: null
   );
-
+  var _initValues = {
+    'title': '',
+    'description': '',
+    'price': '',
+    'imageUrl': ''
+  };
+  var _isInit = true;
 
   @override
   void initState() {
     _imageUrlFocusNode.addListener(_updateImageUrl);
     super.initState();
+  }
+
+  // did change dependancies runs during build
+  @override
+  void didChangeDependencies() {
+    if (_isInit) {
+      // used so we do not run this method to many times
+      final productId = ModalRoute.of(context).settings.arguments
+          as String; // dont need to specify as only one args is passed
+      if (productId != null) {
+        _editedProduct =
+            Provider.of<Products>(context, listen: false).findById(productId);
+        _initValues = {
+          'title': _editedProduct.title,
+          'description': _editedProduct.description,
+          'price': _editedProduct.price.toString(),
+          'imageUrl': ''
+        };
+        _imageUrlController.text = _editedProduct.imageUrl;
+      }
+    }
+    _isInit = false;
+    super.didChangeDependencies();
   }
 
   @override
@@ -42,19 +72,25 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.dispose();
   }
 
-  void _updateImageUrl() { // state update needed to preview image
+  void _updateImageUrl() {
+    // state update needed to preview image
     if (!_imageUrlFocusNode.hasFocus) {
       setState(() {});
     }
   }
 
   void _saveForm() {
-    final isValid =_form.currentState.validate(); 
-    if(!isValid){
+    final isValid = _form.currentState.validate();
+    if (!isValid) {
       return; // return if form is invalid
     }
     _form.currentState.save();
-    Provider.of<Products>(context, listen: false).addProduct(_editedProduct);
+    if(_editedProduct.id != null) {
+      Provider.of<Products>(context, listen: false).updateProduct(_editedProduct.id, _editedProduct);
+    } else {
+      Provider.of<Products>(context, listen: false).addProduct(_editedProduct);
+    }
+    
     Navigator.of(context).pop();
   }
 
@@ -78,6 +114,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
           child: ListView(
             children: <Widget>[
               TextFormField(
+                initialValue: _initValues['title'],
                 decoration: InputDecoration(labelText: 'Title'),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
@@ -92,23 +129,25 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     price: _editedProduct.price,
                     description: _editedProduct.description,
                     imageUrl: _editedProduct.imageUrl,
-                    id: null,
+                    id: _editedProduct.id,
+                    favourite: _editedProduct.favourite
                   );
                 },
               ),
               TextFormField(
+                initialValue: _initValues['price'],
                 decoration: InputDecoration(labelText: 'Price'),
                 textInputAction: TextInputAction.next,
                 keyboardType: TextInputType.number,
                 focusNode: _priceFocusNode,
-                 validator: (value) {
-                  if(value.isEmpty){
+                validator: (value) {
+                  if (value.isEmpty) {
                     return 'Please enter a price';
                   }
-                  if(double.tryParse(value) == null){
+                  if (double.tryParse(value) == null) {
                     return 'Please enter a valid number';
                   }
-                  if(double.tryParse(value) <= 0){
+                  if (double.tryParse(value) <= 0) {
                     return 'Please enter a valid number';
                   }
                   return null;
@@ -122,20 +161,22 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     price: double.parse(value),
                     description: _editedProduct.description,
                     imageUrl: _editedProduct.imageUrl,
-                    id: null,
+                    id: _editedProduct.id,
+                    favourite: _editedProduct.favourite
                   );
                 },
               ),
               TextFormField(
+                initialValue: _initValues['description'],
                 decoration: InputDecoration(labelText: 'Description'),
                 maxLines: 3,
                 keyboardType: TextInputType.multiline,
                 focusNode: _descriptionFocusNode,
                 validator: (value) {
-                  if(value.isEmpty){
+                  if (value.isEmpty) {
                     return 'Please enter a description';
                   }
-                  if(value.length < 10){
+                  if (value.length < 10) {
                     return 'Description should be atleast 10 characters long';
                   }
                   return null;
@@ -146,7 +187,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     price: _editedProduct.price,
                     description: value,
                     imageUrl: _editedProduct.imageUrl,
-                    id: null,
+                    id: _editedProduct.id,
+                    favourite: _editedProduct.favourite
                   );
                 },
               ),
@@ -177,6 +219,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                   ),
                   Expanded(
                     child: TextFormField(
+                      
                       decoration: InputDecoration(labelText: 'Image URL'),
                       keyboardType: TextInputType.url,
                       textInputAction: TextInputAction.done,
@@ -186,14 +229,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
                         _saveForm();
                       },
                       validator: (value) {
-                        if(value.isEmpty){
+                        if (value.isEmpty) {
                           return 'Please enter a URL';
                         }
-                        if(!value.startsWith('http') && !value.startsWith('https')){
+                        if (!value.startsWith('http') &&
+                            !value.startsWith('https')) {
                           return 'Please enter a valid URL';
                         }
                         return null;
-
                       },
                       onSaved: (value) {
                         _editedProduct = Product(
@@ -201,7 +244,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
                           price: _editedProduct.price,
                           description: _editedProduct.description,
                           imageUrl: value,
-                          id: null,
+                    id: _editedProduct.id,
+                    favourite: _editedProduct.favourite
                         );
                       },
                     ),
