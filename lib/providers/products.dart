@@ -58,11 +58,13 @@ class Products with ChangeNotifier {
   }
 
 // widgets listening can see list has been edited. then call for new list at rebuild trigger
- void addProduct(Product product) {
-    const url = 'https://flutter-update.firebaseio.com/products.json';
-    http
+ Future<void> addProduct(Product product) {
+    const url = 'https://flutter-update-b197f.firebaseio.com/products.json';
+    // return future for loading trigger. this is returning the result of then as it is the last future created
+    return http
         .post(
       url,
+      // add headers here
       body: json.encode({
         'title': product.title,
         'description': product.description,
@@ -80,9 +82,11 @@ class Products with ChangeNotifier {
         id: json.decode(response.body)['name'],
       );
       _items.add(newProduct);
-      // _items.insert(0, newProduct); // at the start of the list
+      
       notifyListeners();
     });
+
+    
   }
 
   void updateProduct(String id, Product product) {
