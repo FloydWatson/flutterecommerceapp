@@ -84,7 +84,12 @@ class Products with ChangeNotifier {
       _items.add(newProduct);
       
       notifyListeners();
+    }).catchError((error) {
+      print(error);
+      // throw built into dart. will create new error. we use this so a error can be passed to screen to use in logic
+      throw error;
     });
+    // catch errors from post or then. dont put before then or you will run then after err logic
 
     
   }
