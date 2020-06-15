@@ -58,22 +58,21 @@ class Products with ChangeNotifier {
   }
 
 // widgets listening can see list has been edited. then call for new list at rebuild trigger
- Future<void> addProduct(Product product) {
+ Future<void> addProduct(Product product) async {
     const url = 'https://flutter-update-b197f.firebaseio.com/products.json';
-    // return future for loading trigger. this is returning the result of then as it is the last future created
-    return http
-        .post(
-      url,
-      // add headers here
-      body: json.encode({
-        'title': product.title,
-        'description': product.description,
-        'imageUrl': product.imageUrl,
-        'price': product.price,
-        'isFavorite': product.isFavorite,
-      }),
-    )
-        .then((response) {
+    // this is automatically returning a future thanks to async
+   try {
+      final response = await http.post(
+        url,
+        body: json.encode({
+          'title': product.title,
+          'description': product.description,
+          'imageUrl': product.imageUrl,
+          'price': product.price,
+          'isFavorite': product.isFavorite,
+        }),
+      );
+      // will only execute when above line is complete
       final newProduct = Product(
         title: product.title,
         description: product.description,
@@ -84,12 +83,12 @@ class Products with ChangeNotifier {
       _items.add(newProduct);
       
       notifyListeners();
-    }).catchError((error) {
+    } catch (error) {
       print(error);
-      // throw built into dart. will create new error. we use this so a error can be passed to screen to use in logic
+      // throw custom error for screen to use
       throw error;
-    });
-    // catch errors from post or then. dont put before then or you will run then after err logic
+    }
+
 
     
   }
