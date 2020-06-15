@@ -22,42 +22,42 @@ class Cart with ChangeNotifier {
   }
 
   int get itemCount {
-    return _items == null ? 0 : _items.length;
+    return _items.length;
   }
 
   double get totalAmount {
-    double total = 0.0;
-    // runs this function for every item in the map
+    var total = 0.0;
     _items.forEach((key, cartItem) {
       total += cartItem.price * cartItem.quantity;
     });
-    // returns calculated total
     return total;
   }
 
-  void addItem(String productId, double price, String title) {
-    // if this product id already exists on map then only increase quantity
+  void addItem(
+    String productId,
+    double price,
+    String title,
+  ) {
     if (_items.containsKey(productId)) {
-      // change quantity
+      // change quantity...
       _items.update(
         productId,
         (existingCartItem) => CartItem(
-          id: existingCartItem.id,
-          title: existingCartItem.title,
-          price: existingCartItem.price,
-          quantity: existingCartItem.quantity + 1,
-        ),
+              id: existingCartItem.id,
+              title: existingCartItem.title,
+              price: existingCartItem.price,
+              quantity: existingCartItem.quantity + 1,
+            ),
       );
     } else {
-      // add new entry
       _items.putIfAbsent(
         productId,
         () => CartItem(
-          id: DateTime.now().toString(),
-          title: title,
-          price: price,
-          quantity: 1,
-        ),
+              id: DateTime.now().toString(),
+              title: title,
+              price: price,
+              quantity: 1,
+            ),
       );
     }
     notifyListeners();
@@ -68,30 +68,27 @@ class Cart with ChangeNotifier {
     notifyListeners();
   }
 
-  void clear() {
-    _items = {};
-    notifyListeners();
-  }
-
   void removeSingleItem(String productId) {
     if (!_items.containsKey(productId)) {
       return;
     }
-
     if (_items[productId].quantity > 1) {
       _items.update(
-        productId,
-        (existingCartItem) => CartItem(
-          id: existingCartItem.id,
-          title: existingCartItem.title,
-          price: existingCartItem.price,
-          quantity: existingCartItem.quantity - 1,
-        ),
-      );
+          productId,
+          (existingCartItem) => CartItem(
+                id: existingCartItem.id,
+                title: existingCartItem.title,
+                price: existingCartItem.price,
+                quantity: existingCartItem.quantity - 1,
+              ));
     } else {
       _items.remove(productId);
     }
+    notifyListeners();
+  }
 
+  void clear() {
+    _items = {};
     notifyListeners();
   }
 }
