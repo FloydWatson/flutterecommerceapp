@@ -32,6 +32,7 @@ class Orders with ChangeNotifier {
     // helper list
     final List<OrderItem> loadedOrders = [];
     final extractedData = json.decode(response.body) as Map<String, dynamic>; // map. string keys. dynamic values. typical json style
+    // if orders is null then return. this will stop null errors
     if (extractedData == null) {
       return;
     }
@@ -42,7 +43,7 @@ class Orders with ChangeNotifier {
           id: orderId,
           amount: orderData['amount'],
           dateTime: DateTime.parse(orderData['dateTime']),
-          products: (orderData['products'] as List<dynamic>)
+          products: (orderData['products'] as List<dynamic>) // map to cart items
               .map(
                 (item) => CartItem(
                       id: item['id'],

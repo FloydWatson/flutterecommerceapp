@@ -30,6 +30,7 @@ class Products with ChangeNotifier {
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
+      // return if no products exist. this is to stop nulls having for each called
       if (extractedData == null) {
         return;
       }
