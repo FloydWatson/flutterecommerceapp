@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// show lets dart know we are only interested in that part of the package
 import '../providers/cart.dart' show Cart;
 import '../widgets/cart_item.dart';
-
 import '../providers/orders.dart';
 
 class CartScreen extends StatelessWidget {
-  // route
   static const routeName = '/cart';
 
   @override
   Widget build(BuildContext context) {
-    // getting cart provider
     final cart = Provider.of<Cart>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Your Cart'),
@@ -27,65 +22,82 @@ class CartScreen extends StatelessWidget {
             child: Padding(
               padding: EdgeInsets.all(8),
               child: Row(
-                // adding space between elements
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
                     'Total',
-                    style: TextStyle(
-                      fontSize: 20,
-                    ),
+                    style: TextStyle(fontSize: 20),
                   ),
-                  // spacer allows us to push space between widgets. it takes up all available space between
                   Spacer(),
-                  // element with rounded corners used to display information
                   Chip(
                     label: Text(
-                      // getting total from cart provider. to string is automatic. backslash dollar is to escape string and show dollar sign
                       '\$${cart.totalAmount.toStringAsFixed(2)}',
                       style: TextStyle(
-                          color:
-                              Theme.of(context).primaryTextTheme.title.color),
+                        color: Theme.of(context).primaryTextTheme.title.color,
+                      ),
                     ),
                     backgroundColor: Theme.of(context).primaryColor,
                   ),
-                  FlatButton(
-                    child: Text('ORDER NOW'),
-                    onPressed: () {
-                      Provider.of<Orders>(context, listen: false).addOrder(cart.items.values.toList(), cart.totalAmount);
-                      cart.clear();
-                    },
-                    textColor: Theme.of(context).primaryColor,
-                  ),
+                  OrderButton(cart: cart)
                 ],
               ),
             ),
           ),
-          SizedBox(
-            height: 10,
-          ),
-          // need expanded as list view does not work inside colomn. expanded makes sure it takes as much space as is left inside widget
+          SizedBox(height: 10),
           Expanded(
-            // builder allows for an infinite amount of items
             child: ListView.builder(
-              // needs item count and item builder
-              // count is just how many items need to be rendered
-              itemCount: cart.itemCount,
-              // tells us what needs to be built for each item
-              // need show for this as there is two instances of CartItem imported
+              itemCount: cart.items.length,
               itemBuilder: (ctx, i) => CartItem(
-                // without .values.toList we are getting a map returned. this cannot give us the functionality we need
-                // adding .values.toList goves us an itterable that does allow us acces using index
-                cart.items.values.toList()[i].id,
-                cart.items.keys.toList()[i],
-                cart.items.values.toList()[i].price,
-                cart.items.values.toList()[i].quantity,
-                cart.items.values.toList()[i].title,
-              ),
+                    cart.items.values.toList()[i].id,
+                    cart.items.keys.toList()[i],
+                    cart.items.values.toList()[i].price,
+                    cart.items.values.toList()[i].quantity,
+                    cart.items.values.toList()[i].title,
+                  ),
             ),
-          ),
+          )
         ],
       ),
+    );
+  }
+}
+
+class OrderButton extends StatefulWidget {
+  const OrderButton({
+    Key key,
+    @required this.cart,
+  }) : super(key: key);
+
+  final Cart cart;
+
+  @override
+  _OrderButtonState createState() => _OrderButtonState();
+}
+
+class _OrderButtonState extends State<OrderButton> {
+  var _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return FlatButton(
+      child: _isLoading ? CircularProgressIndicator() : Text('ORDER NOW'),
+      // button disabled if no items in cart or order is being createed
+      onPressed: (widget.cart.totalAmount <= 0 || _isLoading)
+          ? null
+          : () async {
+              setState(() {
+                _isLoading = true;
+              });
+              await Provider.of<Orders>(context, listen: false).addOrder(
+                widget.cart.items.values.toList(),
+                widget.cart.totalAmount,
+              );
+              setState(() {
+                _isLoading = false;
+              });
+              widget.cart.clear();
+            },
+      textColor: Theme.of(context).primaryColor,
     );
   }
 }
