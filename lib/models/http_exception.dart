@@ -1,4 +1,4 @@
-class HttpException implements Exception {
+class HttpException implements Exception { // inheriting exception. this is the default implementation
   final String message;
 
   HttpException(this.message);

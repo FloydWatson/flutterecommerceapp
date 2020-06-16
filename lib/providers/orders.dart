@@ -27,15 +27,17 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> fetchAndSetOrders() async {
-    const url = 'https://flutter-update.firebaseio.com/orders.json';
+    const url = 'https://new-proj-10994.firebaseio.com/orders.json';
     final response = await http.get(url);
+    // helper list
     final List<OrderItem> loadedOrders = [];
-    final extractedData = json.decode(response.body) as Map<String, dynamic>;
+    final extractedData = json.decode(response.body) as Map<String, dynamic>; // map. string keys. dynamic values. typical json style
     if (extractedData == null) {
       return;
     }
     extractedData.forEach((orderId, orderData) {
       loadedOrders.add(
+        // extracting data from json
         OrderItem(
           id: orderId,
           amount: orderData['amount'],
@@ -58,7 +60,7 @@ class Orders with ChangeNotifier {
   }
 
   Future<void> addOrder(List<CartItem> cartProducts, double total) async {
-    const url = 'https://flutter-update.firebaseio.com/orders.json';
+    const url = 'https://new-proj-10994.firebaseio.com/orders.json';
     final timestamp = DateTime.now();
     final response = await http.post(
       url,

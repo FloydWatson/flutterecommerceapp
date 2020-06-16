@@ -81,6 +81,7 @@ class _OrderButtonState extends State<OrderButton> {
   Widget build(BuildContext context) {
     return FlatButton(
       child: _isLoading ? CircularProgressIndicator() : Text('ORDER NOW'),
+      // button disabled if no items in cart or order is being createed
       onPressed: (widget.cart.totalAmount <= 0 || _isLoading)
           ? null
           : () async {

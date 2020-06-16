@@ -123,11 +123,12 @@ class _EditProductScreenState extends State<EditProductScreen> {
       //   Navigator.of(context).pop();
       // }
     }
+    // set state pop can be moved from finally as above will only pass after everyting required has been awaited
     setState(() {
       _isLoading = false;
     });
     Navigator.of(context).pop();
-    // Navigator.of(context).pop();
+    
   }
 
   @override

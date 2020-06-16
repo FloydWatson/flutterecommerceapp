@@ -27,9 +27,13 @@ class Product with ChangeNotifier {
 
   Future<void> toggleFavoriteStatus() async {
     final oldStatus = isFavorite;
-    isFavorite = !isFavorite;
-    notifyListeners();
-    final url = 'https://flutter-update.firebaseio.com/products/$id.json';
+    // isFavorite = !isFavorite;
+    // notifyListeners();
+    // removing duplicate code
+
+    // optimistic updating. changing value before response is recieved. then re updating if we get a err response
+    _setFavValue(!isFavorite);
+    final url = 'https://new-proj-10994.firebaseio.com/products/$id.json';
     try {
       final response = await http.patch(
         url,

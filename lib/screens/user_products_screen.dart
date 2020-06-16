@@ -30,7 +30,7 @@ class UserProductsScreen extends StatelessWidget {
       ),
       drawer: AppDrawer(),
       body: RefreshIndicator(
-        onRefresh: () => _refreshProducts(context),
+        onRefresh: () => _refreshProducts(context), // wrapped in anon func to pass context
         child: Padding(
           padding: EdgeInsets.all(8),
           child: ListView.builder(

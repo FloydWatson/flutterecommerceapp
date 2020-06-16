@@ -13,6 +13,7 @@ class UserProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // scaffold will not work inside of future below so we have to set it as a final withing the build method. That way it is always known what scaffold is being used within catch block for snack bar
     final scaffold = Scaffold.of(context);
     return ListTile(
       title: Text(title),
