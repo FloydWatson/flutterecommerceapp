@@ -28,9 +28,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<Auth, Products>(
           // previous is useful for maintaining state
           // when this is first loaded previous products will not have items list. therefore we need to check for nulls. if it is null we need to init with empty array
-          update: (ctx, auth, previousProducts) => Products(auth.token,
+          update: (ctx, auth, previousProducts) => Products(auth.token, auth.userId,
               previousProducts == null ? [] : previousProducts.items),
-          create: (ctx) => Products('', []),
+          create: (ctx) => Products('', '', []),
         ),
         // change notifier proxy provider can be used with multiple dependancies. ChangeNotifierProxyProvider2 - 6
         ChangeNotifierProvider.value(
