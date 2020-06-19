@@ -25,21 +25,19 @@ class Product with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> toggleFavoriteStatus() async {
+  Future<void> toggleFavoriteStatus(String token, String userId) async {
     final oldStatus = isFavorite;
-    // isFavorite = !isFavorite;
-    // notifyListeners();
-    // removing duplicate code
-
-    // optimistic updating. changing value before response is recieved. then re updating if we get a err response
-    _setFavValue(!isFavorite);
-    final url = 'https://new-proj-10994.firebaseio.com/products/$id.json';
+    isFavorite = !isFavorite;
+    notifyListeners();
+    // adding this data to userFavourite and split that off by userId
+    final url =
+        'https://new-proj-10994.firebaseio.com/userFavorites/$userId/$id.json?auth=$token';
     try {
-      final response = await http.patch(
+      final response = await http.put(
         url,
-        body: json.encode({
-          'isFavorite': isFavorite,
-        }),
+        body: json.encode(
+          isFavorite,
+        ),
       );
       if (response.statusCode >= 400) {
         _setFavValue(oldStatus);

@@ -10,6 +10,11 @@ class Products with ChangeNotifier {
   List<Product> _items = [];
   // var _showFavoritesOnly = false;
 
+  final String authToken;
+  final String userId;
+
+  Products(this.authToken, this.userId, this._items);
+
   List<Product> get items {
     // if (_showFavoritesOnly) {
     //   return _items.where((prodItem) => prodItem.isFavorite).toList();
@@ -25,8 +30,15 @@ class Products with ChangeNotifier {
     return _items.firstWhere((prod) => prod.id == id);
   }
 
-  Future<void> fetchAndSetProducts() async {
-    const url = 'https://new-proj-10994.firebaseio.com/products.json';
+  // square brackets around a positional argument make it optional. we should provide a default
+  Future<void> fetchAndSetProducts([bool filterByUser = false]) async {
+
+    // how to filter products by userid. order by is the prop you want to filter with. equalTo is the id you want to filter by. also need to change on fire base. in rules need to configure index
+    // "products": {
+    //   ".indexOn": ["creatorId"]
+    // }
+    final filterString = filterByUser ? 'orderBy="creatorId"&equalTo="$userId"' : '';
+    final url = 'https://new-proj-10994.firebaseio.com/products.json?auth=$authToken&$filterString';
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
@@ -34,6 +46,12 @@ class Products with ChangeNotifier {
       if (extractedData == null) {
         return;
       }
+      // adjusting product list to show logged in users favourite status
+      final favUrl =
+        'https://new-proj-10994.firebaseio.com/userFavorites/$userId.json?auth=$authToken';
+      final favoriteResponse = await http.get(favUrl);
+      final favoriteData = json.decode(favoriteResponse.body);
+
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -41,7 +59,8 @@ class Products with ChangeNotifier {
           title: prodData['title'],
           description: prodData['description'],
           price: prodData['price'],
-          isFavorite: prodData['isFavorite'],
+          // check user has favorite data before trying to make a call on it or it will cause null error
+          isFavorite: favoriteData == null ? false : favoriteData[prodId] ?? false, // ?? gives alt value to null. so if we dont find prodId in fav list it will be set to false
           imageUrl: prodData['imageUrl'],
         ));
       });
@@ -53,7 +72,8 @@ class Products with ChangeNotifier {
   }
 
   Future<void> addProduct(Product product) async {
-    const url = 'https://new-proj-10994.firebaseio.com/products.json';
+    
+    final url = 'https://new-proj-10994.firebaseio.com/products.json?auth=$authToken';
     try {
       final response = await http.post(
         url,
@@ -63,6 +83,7 @@ class Products with ChangeNotifier {
           'imageUrl': product.imageUrl,
           'price': product.price,
           'isFavorite': product.isFavorite,
+          'creatorId': userId
         }),
       );
       final newProduct = Product(
@@ -83,7 +104,7 @@ class Products with ChangeNotifier {
   Future<void> updateProduct(String id, Product newProduct) async {
     final prodIndex = _items.indexWhere((prod) => prod.id == id);
     if (prodIndex >= 0) {
-      final url = 'https://new-proj-10994.firebaseio.com/products/$id.json'; // cant use const as it is dynamic at runtime
+      final url = 'https://new-proj-10994.firebaseio.com/products/$id.json?auth=$authToken'; // cant use const as it is dynamic at runtime
       // patch is put
       await http.patch(url,
           body: json.encode({
@@ -100,7 +121,7 @@ class Products with ChangeNotifier {
   }
 
   Future<void> deleteProduct(String id) async {
-    final url = 'https://new-proj-10994.firebaseio.com/products/$id.json';
+    final url = 'https://new-proj-10994.firebaseio.com/products/$id.json?auth=$authToken';
     // copying original to use as a fail safe
     final existingProductIndex = _items.indexWhere((prod) => prod.id == id);
     var existingProduct = _items[existingProductIndex];
