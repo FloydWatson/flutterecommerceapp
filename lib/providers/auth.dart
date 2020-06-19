@@ -182,7 +182,7 @@ class Auth with ChangeNotifier {
     return true;
   }
 
-  void tryRefreshOrLogout() async {
+  void _tryRefreshOrLogout() async {
     final refreshBool = await _tryRefresh();
 
     if (!refreshBool) {
@@ -202,6 +202,6 @@ class Auth with ChangeNotifier {
     // set how long til token expires
     final timeToExpiry = _expiryDate.difference(DateTime.now()).inSeconds;
     // create timer to track the time in seconds
-    _authTimer = Timer(Duration(seconds: timeToExpiry), tryRefreshOrLogout);
+    _authTimer = Timer(Duration(seconds: timeToExpiry), _tryRefreshOrLogout); // to clear auto refresh change this method to logout instead
   }
 }
