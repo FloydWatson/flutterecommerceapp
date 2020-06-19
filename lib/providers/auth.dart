@@ -11,6 +11,7 @@ class Auth with ChangeNotifier {
   DateTime _expiryDate;
   String _userId;
   Timer _authTimer;
+  String _refreshToken;
 
   bool get isAuth {
     // if token isnt null returns true. else false
@@ -52,10 +53,10 @@ class Auth with ChangeNotifier {
       if (responseData['error'] != null) {
         throw HttpException(responseData['error']['message']);
       }
-
       // log user in
       _token = responseData['idToken'];
       _userId = responseData['localId'];
+      _refreshToken = responseData['refreshToken'];
       // set expiry date from time passed from firebase
       _expiryDate = DateTime.now().add(
         Duration(
@@ -73,6 +74,7 @@ class Auth with ChangeNotifier {
           'token': _token,
           'userId': _userId,
           'expiryDate': _expiryDate.toIso8601String(),
+          'refreshToken': _refreshToken
         },
       );
       // set a key and store here
@@ -98,6 +100,7 @@ class Auth with ChangeNotifier {
     _token = extractedUserData['token'];
     _userId = extractedUserData['userId'];
     _expiryDate = expiryDate;
+    _refreshToken = extractedUserData['refreshToken'];
     notifyListeners();
     _autoLogout();
     return true;
@@ -116,6 +119,7 @@ class Auth with ChangeNotifier {
     _token = null;
     _userId = null;
     _expiryDate = null;
+    _refreshToken = null;
     if (_authTimer != null) {
       _authTimer.cancel();
       _authTimer = null;
@@ -123,6 +127,69 @@ class Auth with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     // can use remove('userData') if there is data we want to persist
     prefs.clear();
+    notifyListeners();
+  }
+
+  // auto refresh session
+  Future<bool> _tryRefresh() async {
+    // stop if refresh token is null
+    if (_refreshToken == null) {
+      return false;
+    }
+    // firebase refresh api
+    final url =
+        'https://securetoken.googleapis.com/v1/token?key=AIzaSyAH6ksds4_w0eBVJgaTBlLzlFWX3WAratc';
+    final response = await http.post(
+      url,
+      body: jsonEncode(
+        {
+          'grant_type': 'refresh_token',
+          'refresh_token': _refreshToken,
+        },
+      ),
+    );
+
+    final responseData = json.decode(response.body);
+    // clear if error is returned from api
+    if (responseData['error'] != null) {
+      return false;
+    }
+    print("REFRESH TOKEN ${responseData['refresh_token']}");
+    // log user in
+    _token = responseData['id_token'];
+    _userId = responseData['user_id'];
+    _refreshToken = responseData['refresh_token'];
+    // set expiry date from time passed from firebase
+    _expiryDate = DateTime.now().add(
+      Duration(
+        seconds: int.parse(responseData['expires_in']),
+      ),
+    );
+
+    final prefs = await SharedPreferences.getInstance();
+    // prefs needs a string so we can create a JSON object to store
+    final userData = json.encode(
+      {
+        'token': _token,
+        'userId': _userId,
+        'expiryDate': _expiryDate.toIso8601String(),
+        'refreshToken': _refreshToken
+      },
+    );
+    // set a key and store here
+    prefs.setString('userData', userData);
+
+    return true;
+  }
+
+  void tryRefreshOrLogout() async {
+    final refreshBool = await _tryRefresh();
+
+    if (!refreshBool) {
+      logout();
+    }
+
+    _autoLogout();
     notifyListeners();
   }
 
@@ -135,6 +202,6 @@ class Auth with ChangeNotifier {
     // set how long til token expires
     final timeToExpiry = _expiryDate.difference(DateTime.now()).inSeconds;
     // create timer to track the time in seconds
-    _authTimer = Timer(Duration(seconds: timeToExpiry), logout);
+    _authTimer = Timer(Duration(seconds: timeToExpiry), tryRefreshOrLogout);
   }
 }
