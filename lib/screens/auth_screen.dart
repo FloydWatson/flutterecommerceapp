@@ -120,7 +120,9 @@ class _AuthCardState extends State<AuthCard>
   // controlled animation controller
   AnimationController _controller;
   // animation object for height
-  Animation<Size> _heightAnimation;
+  Animation<Offset> _slideAnimation;
+  // opacity animation
+  Animation<double> _opacityAnimation;
 
   @override
   void initState() {
@@ -133,17 +135,25 @@ class _AuthCardState extends State<AuthCard>
       duration: Duration(milliseconds: 300),
     );
     // tween class. this class knows how to animate between 2 values. you give it the 2 values between. double infinity is just the full width
-   
-    _heightAnimation = Tween<Size>(
-      begin: Size(double.infinity, 260),
-      end: Size(double.infinity, 320),
-       // . animation is wrapping tween in an animation. we give it a animation that decides how tween wil animate between the values./ parent is controller. that decides what to animate. cureve is how it weill animate over the duration. Curves is default
-       // ease in or fastOutSlowIn are other common animates
+
+    _slideAnimation = Tween<Offset>(
+      // offset takes x and y axis value
+      begin: Offset(0, -1.5),
+      end: Offset(0, 0),
+      // . animation is wrapping tween in an animation. we give it a animation that decides how tween wil animate between the values./ parent is controller. that decides what to animate. cureve is how it weill animate over the duration. Curves is default
+      // ease in or fastOutSlowIn are other common animates
     ).animate(
       CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
     // call set state when heightanimation changes size. manual animation
     // _heightAnimation.addListener(() =>  setState(() {}),);
+
+    _opacityAnimation = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
   }
 
   // need to drop controller when widget is removed
@@ -232,16 +242,15 @@ class _AuthCardState extends State<AuthCard>
   void _switchAuthMode() {
     if (_authMode == AuthMode.Login) {
       setState(() {
-
         _authMode = AuthMode.Signup;
       });
-      // forward starts the animation growing
+      // forward starts the animation
       _controller.forward();
     } else {
       setState(() {
         _authMode = AuthMode.Login;
       });
-      // take size back to small
+      // take controller back
       _controller.reverse();
     }
   }
@@ -295,19 +304,35 @@ class _AuthCardState extends State<AuthCard>
                     _authData['password'] = value;
                   },
                 ),
-                if (_authMode == AuthMode.Signup)
-                  TextFormField(
-                    enabled: _authMode == AuthMode.Signup,
-                    decoration: InputDecoration(labelText: 'Confirm Password'),
-                    obscureText: true,
-                    validator: _authMode == AuthMode.Signup
-                        ? (value) {
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match!';
-                            }
-                          }
-                        : null,
+                // animatedCOntainer hides the field when not in use
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  constraints: BoxConstraints(
+                    minHeight: _authMode == AuthMode.Signup ? 60 : 0,
+                    maxHeight: _authMode == AuthMode.Signup ? 120 : 0,
                   ),
+                  curve: Curves.easeIn,
+                  child: FadeTransition(
+                    // use the animation we created. fadetransition handles the listener
+                    opacity: _opacityAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: TextFormField(
+                        enabled: _authMode == AuthMode.Signup,
+                        decoration:
+                            InputDecoration(labelText: 'Confirm Password'),
+                        obscureText: true,
+                        validator: _authMode == AuthMode.Signup
+                            ? (value) {
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match!';
+                                }
+                              }
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
                 SizedBox(
                   height: 20,
                 ),
