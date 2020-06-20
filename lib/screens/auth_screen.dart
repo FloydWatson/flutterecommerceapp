@@ -103,7 +103,9 @@ class AuthCard extends StatefulWidget {
   _AuthCardState createState() => _AuthCardState();
 }
 
-class _AuthCardState extends State<AuthCard> {
+// mixin for animation
+class _AuthCardState extends State<AuthCard>
+    with SingleTickerProviderStateMixin {
   final GlobalKey<FormState> _formKey = GlobalKey();
   // control which form is displayed
   AuthMode _authMode = AuthMode.Login;
@@ -114,6 +116,53 @@ class _AuthCardState extends State<AuthCard> {
   var _isLoading = false;
   // password controller for checking password between pass and confirm pass are the same before submission
   final _passwordController = TextEditingController();
+  // variables for animation
+  // controlled animation controller
+  AnimationController _controller;
+  // animation object for height
+  Animation<Offset> _slideAnimation;
+  // opacity animation
+  Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+
+    super.initState();
+    // vsync is pointer at widget. means it will only animate when the qidget is visible
+    _controller = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 300),
+    );
+    // tween class. this class knows how to animate between 2 values. you give it the 2 values between. double infinity is just the full width
+
+    _slideAnimation = Tween<Offset>(
+      // offset takes x and y axis value
+      begin: Offset(0, -1.5),
+      end: Offset(0, 0),
+      // . animation is wrapping tween in an animation. we give it a animation that decides how tween wil animate between the values./ parent is controller. that decides what to animate. cureve is how it weill animate over the duration. Curves is default
+      // ease in or fastOutSlowIn are other common animates
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.linear),
+    );
+    // call set state when heightanimation changes size. manual animation
+    // _heightAnimation.addListener(() =>  setState(() {}),);
+
+    _opacityAnimation = Tween(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+  }
+
+  // need to drop controller when widget is removed
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _controller.dispose();
+  }
 
   // return a widget with error message
   void _showErrorDialog(String message) {
@@ -123,9 +172,11 @@ class _AuthCardState extends State<AuthCard> {
         title: Text('An Error Occured'),
         content: Text(message),
         actions: <Widget>[
-          FlatButton(onPressed: () {
-            Navigator.of(ctx).pop();
-          }, child: Text('Okay'))
+          FlatButton(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+              },
+              child: Text('Okay'))
         ],
       ),
     );
@@ -154,7 +205,6 @@ class _AuthCardState extends State<AuthCard> {
           _authData['password'],
         );
       }
-
 
       // handling our made error
       // this will only be thrown on failed validation of data
@@ -194,10 +244,14 @@ class _AuthCardState extends State<AuthCard> {
       setState(() {
         _authMode = AuthMode.Signup;
       });
+      // forward starts the animation
+      _controller.forward();
     } else {
       setState(() {
         _authMode = AuthMode.Login;
       });
+      // take controller back
+      _controller.reverse();
     }
   }
 
@@ -209,9 +263,13 @@ class _AuthCardState extends State<AuthCard> {
         borderRadius: BorderRadius.circular(10.0),
       ),
       elevation: 8.0,
-      child: Container(
-        // increase height for sign up. needs extra form fields
+      // animated container handles container animations. allows you to not have to build animations. doesnt need controller. handles everything for you
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeIn,
         height: _authMode == AuthMode.Signup ? 320 : 260,
+        // for using animation builder
+        // height: _heightAnimation.value.height,
         constraints:
             BoxConstraints(minHeight: _authMode == AuthMode.Signup ? 320 : 260),
         width: deviceSize.width * 0.75,
@@ -225,7 +283,6 @@ class _AuthCardState extends State<AuthCard> {
                   decoration: InputDecoration(labelText: 'E-Mail'),
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
-                    // very basic email check. will need more complex reg expression
                     if (value.isEmpty || !value.contains('@')) {
                       return 'Invalid email!';
                     }
@@ -236,7 +293,6 @@ class _AuthCardState extends State<AuthCard> {
                 ),
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Password'),
-                  // hides pass
                   obscureText: true,
                   controller: _passwordController,
                   validator: (value) {
@@ -248,26 +304,39 @@ class _AuthCardState extends State<AuthCard> {
                     _authData['password'] = value;
                   },
                 ),
-                // only rendered in sign up
-                if (_authMode == AuthMode.Signup)
-                  TextFormField(
-                    enabled: _authMode == AuthMode.Signup,
-                    decoration: InputDecoration(labelText: 'Confirm Password'),
-                    obscureText: true,
-                    validator: _authMode == AuthMode.Signup
-                        ? (value) {
-                            // check passwords match.
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match!';
-                            }
-                          }
-                        : null,
+                // animatedCOntainer hides the field when not in use
+                AnimatedContainer(
+                  duration: Duration(milliseconds: 300),
+                  constraints: BoxConstraints(
+                    minHeight: _authMode == AuthMode.Signup ? 60 : 0,
+                    maxHeight: _authMode == AuthMode.Signup ? 120 : 0,
                   ),
+                  curve: Curves.easeIn,
+                  child: FadeTransition(
+                    // use the animation we created. fadetransition handles the listener
+                    opacity: _opacityAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: TextFormField(
+                        enabled: _authMode == AuthMode.Signup,
+                        decoration:
+                            InputDecoration(labelText: 'Confirm Password'),
+                        obscureText: true,
+                        validator: _authMode == AuthMode.Signup
+                            ? (value) {
+                                if (value != _passwordController.text) {
+                                  return 'Passwords do not match!';
+                                }
+                              }
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
                 SizedBox(
                   height: 20,
                 ),
                 if (_isLoading)
-                  // display instead of button if loading
                   CircularProgressIndicator()
                 else
                   RaisedButton(
@@ -282,7 +351,6 @@ class _AuthCardState extends State<AuthCard> {
                     color: Theme.of(context).primaryColor,
                     textColor: Theme.of(context).primaryTextTheme.button.color,
                   ),
-                // button to change between modes. login / sign up
                 FlatButton(
                   child: Text(
                       '${_authMode == AuthMode.Login ? 'SIGNUP' : 'LOGIN'} INSTEAD'),
